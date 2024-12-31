@@ -51,7 +51,6 @@ fun RadialSlider(
                         if (newPercentage < 0) {
                             newPercentage += 100f
                         }
-
                         newPercentage = newPercentage.coerceIn(0f, 100f)
                         onPercentageChange(newPercentage)
                     }
@@ -61,35 +60,36 @@ fun RadialSlider(
     ) {
         val strokeWidth = 20f
 
-        // Calculate the dynamicArcColor within the Canvas draw scope
-        val dynamicArcColor = lerp(Color.Red, Color.Green, percentage / 100f)
-        val darkColor = dynamicArcColor.copy(
-            red = dynamicArcColor.red * 0.6f,
-            green = dynamicArcColor.green * 0.6f,
-            blue = dynamicArcColor.blue * 0.6f,
-            alpha = dynamicArcColor.alpha
+        // Base color blend based on current percentage
+        val baseColor = lerp(Color.Red, Color.Green, percentage / 100f)
+        val darkColor = baseColor.copy(
+            red = baseColor.red * 0.6f,
+            green = baseColor.green * 0.6f,
+            blue = baseColor.blue * 0.6f,
+            alpha = baseColor.alpha
         )
-        
-        // Define a small delta for the bright spot
-        val delta = 0.02f // Adjust as needed for sharpness
 
-        // Calculate the exact position for the bright spot
-        val offset = percentage / 100f
+        // Small delta for narrow bright band
+        val delta = 0.02f
 
-        // Define color stops with the bright spot centered at the offset
+        // The fraction of the circle corresponding to the tip of the arc
+        // 0.75f corresponds to 12 o’clock for a sweep gradient in Compose.
+        val offset = (0.75f + (percentage / 100f)).mod(1f)
+
+        // Color stops placing the brightest color at 'offset'
         val adjustedStops = listOf(
             (offset - delta).mod(1f) to darkColor,
-            offset to dynamicArcColor,
+            offset to baseColor,
             (offset + delta).mod(1f) to darkColor
         ).sortedBy { it.first }
 
-        // Create the sweep gradient with the correct center
+        // Create the sweep gradient centered on the Canvas
         val sweepGradient = Brush.sweepGradient(
             colorStops = adjustedStops.toTypedArray(),
             center = Offset(size.width / 2f, size.height / 2f)
         )
 
-        // Draw background circle
+        // Draw a background arc
         drawArc(
             color = onBackgroundColor.copy(alpha = 0.3f),
             startAngle = -90f,
@@ -98,7 +98,7 @@ fun RadialSlider(
             style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
         )
 
-        // Draw progress arc with the adjusted sweepGradient
+        // Draw the progress arc with the sweep gradient
         drawArc(
             brush = sweepGradient,
             startAngle = -90f,
@@ -107,7 +107,7 @@ fun RadialSlider(
             style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
         )
 
-        // Center circle
+        // Draw a center circle
         drawCircle(
             color = backgroundColor,
             radius = strokeWidth
