@@ -4,8 +4,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -17,12 +15,6 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.MaterialTheme
 import kotlin.math.PI
 import kotlin.math.atan2
-import kotlin.math.roundToInt
-import androidx.compose.foundation.focusable
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.rotary.onRotaryScrollEvent
-import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.graphics.Brush
 
 @Composable
