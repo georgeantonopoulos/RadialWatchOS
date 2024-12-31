@@ -61,6 +61,6 @@ dependencies {
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
     debugImplementation(libs.tiles.tooling)
-    implementation("androidx.wear.compose:compose-material:1.1.0")
-    implementation("androidx.wear.compose:compose-foundation:1.1.0")
+    implementation("androidx.wear.compose:compose-material:1.4.0")
+    implementation("androidx.wear.compose:compose-foundation:1.4.0")
 }
