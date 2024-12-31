@@ -30,6 +30,8 @@ import kotlin.math.roundToInt
 import android.view.MotionEvent
 import android.view.InputDevice
 import android.view.WindowManager
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp as colorLerp
 
 class MainActivity : ComponentActivity() {
     private var currentPercentage by mutableStateOf(50f)
@@ -100,7 +102,7 @@ fun WearApp(
             Text(
                 text = "${percentage.roundToInt()}%",
                 style = MaterialTheme.typography.title1,
-                color = MaterialTheme.colors.primary,
+                color = colorLerp(Color.Red, Color.Green, percentage / 100f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.align(Alignment.Center)
             )

@@ -3,19 +3,20 @@ package com.example.myfirstwearapp.presentation
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.MaterialTheme
 import kotlin.math.PI
 import kotlin.math.atan2
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp as colorLerp
+import kotlin.math.abs
 
 @Composable
 fun RadialSlider(
@@ -23,8 +24,47 @@ fun RadialSlider(
     percentage: Float,
     onPercentageChange: (Float) -> Unit
 ) {
-    val backgroundColor = MaterialTheme.colors.background
-    val onBackgroundColor = MaterialTheme.colors.onBackground
+    // Move MaterialTheme color calculation outside Canvas
+    val backgroundColor = MaterialTheme.colors.onBackground.copy(alpha = 0.3f)
+    val centerColor = MaterialTheme.colors.background
+    
+    // Compute colors and gradient only when percentage changes
+    val baseColor = remember(percentage) {
+        colorLerp(Color.Red, Color.Green, percentage / 100f)
+    }
+    val darkColor = remember(baseColor) {
+        baseColor.copy(
+            red = baseColor.red * 0.6f,
+            green = baseColor.green * 0.6f,
+            blue = baseColor.blue * 0.6f,
+            alpha = baseColor.alpha
+        )
+    }
+    val delta = 0.1f
+    val adjustedStops = remember(baseColor, darkColor, percentage) {
+        // Normalize the percentage to [0,1] and adjust for starting at -90 degrees
+        val normalizedPercentage = (percentage / 100f)
+        val offset = (0.75f + normalizedPercentage).mod(1f)
+        
+        // Create more granular stops for smoother transition
+        val stops = mutableListOf<Pair<Float, Color>>()
+        
+        // Add more intermediate stops with finer granularity
+        for (i in -5..5) {  // Increased range from -3..3 to -5..5
+            val pos = (offset + (i * delta/3)).mod(1f)  // Decreased step size from delta/2 to delta/3
+            val intensity = 1f - (abs(i) * 0.15f).coerceIn(0f, 1f)  // Adjusted intensity curve
+            stops.add(pos to colorLerp(darkColor, baseColor, intensity))
+        }
+
+        // Add wrapping stops for smooth transition at 0/360 degrees
+        stops.addAll(stops.map { (pos, color) ->
+            if (pos < 0f) 1f + pos to color
+            else if (pos > 1f) pos - 1f to color
+            else pos to color
+        })
+
+        stops.distinctBy { it.first }.sortedBy { it.first }
+    }
 
     Canvas(
         modifier = Modifier
@@ -51,46 +91,22 @@ fun RadialSlider(
             .then(modifier)
     ) {
         val strokeWidth = 20f
-
-        // Base color blend based on current percentage
-        val baseColor = lerp(Color.Red, Color.Green, percentage / 100f)
-        val darkColor = baseColor.copy(
-            red = baseColor.red * 0.6f,
-            green = baseColor.green * 0.6f,
-            blue = baseColor.blue * 0.6f,
-            alpha = baseColor.alpha
-        )
-
-        // Small delta for narrow bright band
-        val delta = 0.02f
-
-        // The fraction of the circle corresponding to the tip of the arc
-        // 0.75f corresponds to 12 o’clock for a sweep gradient in Compose.
-        val offset = (0.75f + (percentage / 100f)).mod(1f)
-
-        // Color stops placing the brightest color at 'offset'
-        val adjustedStops = listOf(
-            (offset - delta).mod(1f) to darkColor,
-            offset to baseColor,
-            (offset + delta).mod(1f) to darkColor
-        ).sortedBy { it.first }
-
-        // Create the sweep gradient centered on the Canvas
+        
+        // Create the gradient here where we have access to density information
         val sweepGradient = Brush.sweepGradient(
             colorStops = adjustedStops.toTypedArray(),
             center = Offset(size.width / 2f, size.height / 2f)
         )
 
-        // Draw a background arc
+        // Use the pre-calculated background color
         drawArc(
-            color = onBackgroundColor.copy(alpha = 0.3f),
+            color = backgroundColor,
             startAngle = -90f,
             sweepAngle = 360f,
             useCenter = false,
             style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
         )
 
-        // Draw the progress arc with the sweep gradient
         drawArc(
             brush = sweepGradient,
             startAngle = -90f,
@@ -99,9 +115,9 @@ fun RadialSlider(
             style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
         )
 
-        // Draw a center circle
+        // Use the pre-calculated center color
         drawCircle(
-            color = backgroundColor,
+            color = centerColor,
             radius = strokeWidth
         )
     }
